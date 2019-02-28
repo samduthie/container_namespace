@@ -2,6 +2,10 @@
 // taken from this tutorial https://www.youtube.com/watch?v=Utf-A4rODH8
 // Sam Duthie 2019
 
+// example of how to limit name spaces to build a container
+// to use seperate process list we need a root file system to link to
+// needs control groups - i.e. limiting resources for cpu, memory, permissions
+
 package main
 
 import(
@@ -32,13 +36,11 @@ func run() {
 
     // Call system commands with new name spaces
     cmd.SysProcAttr = &syscall.SysProcAttr {
-        // flag to not call host machine
+        // flag to not use host machine hostname
         Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID,
     }
 
     must(cmd.Run())
-
-
 }
 
 func child() {
@@ -49,10 +51,7 @@ func child() {
     cmd.Stdout = os.Stdout
     cmd.Stderr = os.Stderr
 
-
     must(cmd.Run())
-
-
 }
 
 func must(err error) {
