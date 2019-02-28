@@ -8,6 +8,7 @@ import(
     "fmt"
     "os"
     "os/exec"
+    "syscall"
 )
 
 // docker run <container> cmd args
@@ -16,18 +17,38 @@ func main() {
     switch os.Args[1] {
     case "run":
         run()
+    case "child":
+        child()
     default:
         panic("incorrect argument")
     }
 }
 
 func run() {
-    fmt.Printf("running %v\n", os.Args[2:])
+    cmd := exec.Command("/proc/self/exe", append([]string{"child"}, os.Args[2:]...)...)
+    cmd.Stdin = os.Stdout
+    cmd.Stdout = os.Stdout
+    cmd.Stderr = os.Stderr
+
+    // Call system commands with new name spaces
+    cmd.SysProcAttr = &syscall.SysProcAttr {
+        // flag to not call host machine
+        Cloneflags: syscall.CLONE_NEWUTS | syscall.CLONE_NEWPID,
+    }
+
+    must(cmd.Run())
+
+
+}
+
+func child() {
+    fmt.Printf("running %v as PID %d \n", os.Args[2:], os.Getpid())
 
     cmd := exec.Command(os.Args[2], os.Args[3:]...)
     cmd.Stdin = os.Stdout
     cmd.Stdout = os.Stdout
     cmd.Stderr = os.Stderr
+
 
     must(cmd.Run())
 
